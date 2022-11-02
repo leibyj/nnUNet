@@ -66,23 +66,18 @@ def data_prep(pth, seg_net, dev):
     # sample all patches, run through seg model to get outputs of interest
     sampler = tio.GridSampler(subject=sub,patch_size=(28, 256, 256))
     all_patches = torch.empty(0)
-    for i, patch in enumerate(sampler):
-        all_patches = torch.cat((all_patches, patch.ct.data.unsqueeze(0)), dim=0)
-
-    all_patches.to(dev)
     seg_net.eval()
-    with torch.no_grad():
-        _, skips, _, _ = seg_net(all_patches)
+    for i, patch in enumerate(sampler):
+        # need to run one patch at a time due to GPU memory limitations... 
+    	with torch.no_grad():
+            _, skips, _, _ = seg_net(patch.ct.data.unsqueeze(0).to(dev))
+            pred_in = torch.empty(0)
+            for s in skips:
+                p = torch.mean(s, axis = [2,3,4])
+                pred_in = torch.cat((pred_in, p.detach().cpu()), axis =-1)
+            all_patches = torch.cat((all_patches, pred_in), dim=0)
 
-    # global pooling and concatenation (dim 0 == batch, dim 1 == channels)
-    pred_in = torch.empty(0)
-    for s in skips:
-        p = torch.mean(s, axis = [2,3,4])
-        pred_in = torch.cat((pred_in, p), axis =-1)
-
-     # in future, add getting decoding block and decoder outputs, final output before sigmoid, etc
-
-    return pred_in
+    return all_patches
 
 # path to pretrained segmentation model weights
 pt_pth = str(argv[1])
