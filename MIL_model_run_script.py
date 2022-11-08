@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 
 import pandas as pd
@@ -21,7 +22,7 @@ bag_data = BagDataset(data_path = data_path,
                      files = files,
                      labels=labels)
 
-dl = DataLoader(bag_data, batch_size=10, shuffle=True, collate_fn=collage_bag_batches)
+dl = DataLoader(bag_data, batch_size=10, shuffle=True, collate_fn=collate_bag_batches)
 
 mod = MIL_model().to(device)
 opt = torch.optim.SGD(mod.parameters(), lr=0.001, weight_decay=0.005)
@@ -34,6 +35,7 @@ for j in range(100):
         opt.zero_grad()
         b_out = torch.empty(0).to(device)
         for d in dat:
+        	d.to(device)
             out, _ = mod(d)
             b_out = torch.cat((b_out, out))
         b_out = b_out.unsqueeze(1)

@@ -24,9 +24,8 @@ class BagDataset(Dataset):
         return dat, label # return data as tensor (P x F), label
 
 
-def collage_bag_batches(batch):
+def collate_bag_batches(batch):
     data = [item[0] for item in batch]
     target = [item[1] for item in batch]
-    target = 
 
     return data, target # returns data batch as list of length batch size tensors (P x F)

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class ATTN_module(nn.Module):
   def __init__(self, dims = [512, 256], dropout = True):
     """
-    Basic 2 layer attention network
+    Basic 3 layer attention network
     Forward function will return attention tensor (Px1) and original input
     """
     super(ATTN_module, self).__init__()
@@ -24,34 +24,34 @@ class ATTN_module(nn.Module):
     return self.net(x), x
 
 
-class MIL_model(nn.module):
+class MIL_model(nn.Module):
     def __init__(self, dims = [1120, 512, 256], dropout = True):
         super(MIL_model, self).__init__()
 
-    fc = [nn.Linear(dims[0], dims[1]), nn.ReLU()]
-    if dropout:
-        fc.append(nn.Dropout(0.25))
-    fc.extend([nn.Linear(dims[1], dims[1]), nn.ReLU()])
-    if dropout:
-        fc.append(nn.Dropout(0.25))
+        fc = [nn.Linear(dims[0], dims[1]), nn.ReLU()]
+        if dropout:
+            fc.append(nn.Dropout(0.25))
+        fc.extend([nn.Linear(dims[1], dims[1]), nn.ReLU()])
+        if dropout:
+            fc.append(nn.Dropout(0.25))
 
-    fc.append(ATTN_module([dims[1], dims[2]], dropout = dropout))
+        fc.append(ATTN_module([dims[1], dims[2]], dropout = dropout))
 
-    self.attn_net = nn.Sequential(*fc)
+        self.attn_net = nn.Sequential(*fc)
 
-    self.classifier = nn.Sequential(
-        nn.Linear(dims[1], dims[2]),
-        nn.ReLU(),
-        nn.Linear(dims[2], 1),
-        nn.Sigmoid()
-        )
+        self.classifier = nn.Sequential(
+            nn.Linear(dims[1], dims[2]),
+            nn.ReLU(),
+            nn.Linear(dims[2], 1),
+            nn.Sigmoid()
+            )
 
     def forward(self, x):
         A, x = self.attn_net(x) # A.shape == Px1
-        A = F.softmax(A, dim=1)
+        A = F.softmax(A, dim=0)
 
         # A * feature map
-        x = torch.mm(A, x) # x.shape == Px512
+        x = torch.mul(A, x) # x.shape == Px512
 
         # collapse 
         x = x.sum(dim=0) # x.shape == 512
@@ -113,4 +113,4 @@ class MIL_model(nn.module):
 #         self.net = nn.Sequential(*layers)
     
 #     def forward(self, x):
-#         return self.net(x)   
+#         return self.net(x)    
