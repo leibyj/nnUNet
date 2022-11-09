@@ -70,11 +70,15 @@ def data_prep(pth, seg_net, dev):
     for i, patch in enumerate(sampler):
         # need to run one patch at a time due to GPU memory limitations... 
     	with torch.no_grad():
-            _, skips, _, _ = seg_net(patch.ct.data.unsqueeze(0).to(dev))
+            # Generic_UNet_predict returns: Predicted mask, skip connections (list), decoding block, decoder outputs (list)
+            _, skips, db, _ = seg_net(patch.ct.data.unsqueeze(0).to(dev))
             pred_in = torch.empty(0)
             for s in skips:
                 p = torch.mean(s, axis = [2,3,4])
                 pred_in = torch.cat((pred_in, p.detach().cpu()), axis =-1)
+            # cat decoding block too...
+            p = torch.mean(db, axis = [2,3,4])
+            pred_in = torch.cat((pred_in, p.detach().cpu()), axis =-1)
             all_patches = torch.cat((all_patches, pred_in), dim=0)
 
     return all_patches

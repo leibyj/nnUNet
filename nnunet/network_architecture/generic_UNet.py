@@ -648,10 +648,7 @@ class Generic_UNet_predict(SegmentationNetwork):
             if not self.convolutional_pooling:
                 x = self.td[d](x)
 
-        print(x.shape)
-
         db = self.conv_blocks_context[-1](x)
-        print(db.shape)
 
         for u in range(len(self.tu)):
             if u == 0:
