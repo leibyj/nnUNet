@@ -21,11 +21,12 @@ class BagDataset(Dataset):
         # load .pt file
         dat = torch.load(self.data_path + file_name)
 
-        return dat, label # return data as tensor (P x F), label
+        return dat, label, file_name # return data as tensor (P x F), label, file_name
 
 
 def collate_bag_batches(batch):
     data = [item[0] for item in batch]
     target = [item[1] for item in batch]
+    fn = [item[2] for item in batch]
 
-    return data, target # returns data batch as list of length batch size tensors (P x F)
+    return data, target, fn # returns data batch as list of length batch size tensors (P x F); target and file names are lists
