@@ -14,7 +14,7 @@ from sys import argv
 
 
 def train_fold(fold, device, input_dim):
-    print("________________________________", "FOLD: ", fold, "________________________________")
+    print("_"*15, "FOLD: ", fold, "_"*15)
 
     tr_md = pd.read_csv(f"/home/jleiby/abdominal_ct/data/text_files/fold_{fold}_ct_labels_TRAINING.csv", names=['ID', 'label'])
     tr_files = tr_md.ID.tolist()
@@ -36,7 +36,7 @@ def train_fold(fold, device, input_dim):
 
     te_dl = DataLoader(te_bag_data, batch_size=10, shuffle=True, collate_fn=collate_bag_batches)
 
-    mod = MIL_model_features(dims=[input_dim, 512, 256]).to(device)
+    mod = MIL_model(dims=[input_dim, 512, 256], return_features=True).to(device)
     opt = torch.optim.AdamW(mod.parameters())
 
     criterion = nn.BCELoss().to(device)
@@ -123,7 +123,6 @@ def train_fold(fold, device, input_dim):
 device = str(argv[1])
 
 data_path = "/home/jleiby/abdominal_ct/data/encoder_only/overlap_data/"
-
 
 folds = [1,2,3,4,5]
 

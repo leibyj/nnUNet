@@ -18,7 +18,6 @@ class ATTN_module(nn.Module):
 
     self.net = nn.Sequential(*self.net)
 
-
   def forward(self, x):
     return self.net(x), x
 
@@ -54,8 +53,10 @@ class ATTN_module_gated(nn.Module):
 
 
 class MIL_model(nn.Module):
-    def __init__(self, dims = [1120, 512, 256], dropout = True):
+    def __init__(self, dims = [1120, 512, 256], dropout = True, return_features=True):
         super(MIL_model, self).__init__()
+
+        self.return_feats = return_features
 
         fc = [nn.Linear(dims[0], dims[1]), nn.ReLU()]
         if dropout:
@@ -83,52 +84,49 @@ class MIL_model(nn.Module):
 
         # collapse 
         x = x.sum(dim=0) # x.shape == 512
-        out = self.classifier(x)
 
+        if self.return_feats:
+            feats = self.classifier[0:2](x)
+            return self.classifier[2:](feats), A, feats
+
+        out = self.classifier(x)
         return out, A
 
-class MIL_model_features(nn.Module):
-    def __init__(self, dims = [1120, 512, 256], dropout = True):
-        super(MIL_model_features, self).__init__()
+# class MIL_model_features(nn.Module):
+#     def __init__(self, dims = [1120, 512, 256], dropout = True):
+#         super(MIL_model_features, self).__init__()
 
-        fc = [nn.Linear(dims[0], dims[1]), nn.ReLU()]
-        if dropout:
-            fc.append(nn.Dropout(0.25))
-        fc.extend([nn.Linear(dims[1], dims[1])]) #, nn.ReLU()])
-        if dropout:
-            fc.append(nn.Dropout(0.25))
-        fc.append(ATTN_module_gated([dims[1], dims[2]], dropout = dropout))
+#         fc = [nn.Linear(dims[0], dims[1]), nn.ReLU()]
+#         if dropout:
+#             fc.append(nn.Dropout(0.25))
+#         fc.extend([nn.Linear(dims[1], dims[1])]) #, nn.ReLU()])
+#         if dropout:
+#             fc.append(nn.Dropout(0.25))
+#         fc.append(ATTN_module_gated([dims[1], dims[2]], dropout = dropout))
 
-        self.attn_net = nn.Sequential(*fc)
+#         self.attn_net = nn.Sequential(*fc)
 
-        # self.classifier = nn.Sequential(
-        #     nn.Linear(dims[1], dims[2]),
-        #     nn.ReLU(),
-        #     nn.Linear(dims[2], 1),
-        #     nn.Sigmoid()
-        #     )
-
-        # classifier
-        self.do = nn.Dropout(0.25)
-        self.class_1 = nn.Linear(dims[1], dims[2])
-        self.class_out = nn.Linear(dims[2], 1)
-        self.relu = nn.ReLU()
-        self.sig = nn.Sigmoid()
+#         # classifier
+#         self.do = nn.Dropout(0.25)
+#         # self.class_1 = nn.Linear(dims[1], dims[2])
+#         self.get_feats = nn.Sequential(nn.Linear(dims[1], dims[2]),
+#             nn.ReLU())
+#         self.class_out = nn.Linear(dims[2], 1)
+#         self.sig = nn.Sigmoid()
 
 
-    def forward(self, x):
-        A, x = self.attn_net(x) # A.shape == Px1
-        A = F.softmax(A, dim=0)
+#     def forward(self, x):
+#         A, x = self.attn_net(x) # A.shape == Px1
+#         A = F.softmax(A, dim=0)
 
-        # A * feature map
-        x = torch.mul(A, x) # x.shape == Px512
+#         # A * feature map
+#         x = torch.mul(A, x) # x.shape == Px512
 
-        # collapse 
-        x = x.sum(dim=0) # x.shape == 512
-        # out = self.classifier(x)
-        feats = self.class_1(self.do(x))
-        # change here for linear vs ReLU outputs for features
-        feats = self.relu(feats)
-        out = self.sig(self.class_out(feats))
+#         # collapse 
+#         x = x.sum(dim=0) # x.shape == 512
+#         # out = self.classifier(x)
+#         feats = self.get_feats(self.do(x))
+#         # feats = self.relu(feats)
+#         out = self.sig(self.class_out(feats))
 
-        return out, A, feats
+#         return out, A, feats

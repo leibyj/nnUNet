@@ -22,7 +22,6 @@ from nnunet.network_architecture.initialization import InitWeights_He
 from nnunet.network_architecture.neural_network import SegmentationNetwork
 import torch.nn.functional
 
-
 class ConvDropoutNormNonlin(nn.Module):
     """
     fixes a bug in ConvDropoutNormNonlin where lrelu was used regardless of nonlin. Bad.
